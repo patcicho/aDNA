@@ -227,7 +227,7 @@ if [[ ${#missing_fastq[@]} -gt 0 ]]; then
   echo "${missing_fastq}" > /Users/Patrick/aDNA/Project/${PROJECT}/logs/${PROJECT}_missing_fastqs.log | pr -to30
 
 else
-  echo_g "All paired end reads found."
+  echo_g "All paired end reads found." | pr -to30
 
 fi
 
@@ -262,7 +262,7 @@ task_count_fastp=0
 
 for fastq in ${fastq_files[@]}; do
 
-  fastp_base=$(basename "$fastq_file")
+  fastp_base=$(basename "$fastq")
 
   r1_file="${fastq}_S1_L004_R1_001.fastq.gz"
   r2_file="${fastq}_S1_L004_R2_001.fastq.gz"
@@ -273,27 +273,27 @@ for fastq in ${fastq_files[@]}; do
   ((task_count_fastp++))
   basename=${fastq%.fastq.gz}
 
-  echo "Sample $fastp_base - Sample number $task_count_fastp out of $tasks ..."
+  echo "Sample $fastp_base - Sample number $task_count_fastp out of $tasks ..." | pr -to30
 
 # Calculate total number of reads by - total number of lines / 4
-  echo Calculating number of reads total ...
-
-  #echo $(($(gzcat $fastq | wc -l ) /4))
+  echo "Calculating number of reads total ..." | pr -to30
   #total_reads=$(($(gzcat $fastq | wc -l ) /4))
+ 
   echo $fastq $total_reads >> /Users/Patrick/aDNA/Project/${PROJECT}/statistics/statistics_fastp.txt # writes to statistic file
-
 
   #echo Performing fastp adapter and length trimming ...
   # length and quality scores >= 30
   echo
-  echo "fastp -l 30 -q 30 --in1 $r1_file --in2 $r2_file --out1 $r1_out --out2 $r2_out" # can use paralell command here
-  echo
-  sleep 2
-  echo Calculating number of reads after fastp trimming ...
+  
+  # can use paralell command here
+  # add in print to log file to keep track of the samples and fastp command used 
+  echo "fastp -l 30 -q 30 --in1 $r1_file --in2 $r2_file --out1 $r1_out --out2 $r2_out" |pr -to30
+
+  echo "Calculating number of reads after fastp trimming ..." | pr -to30
   #trimmed_reads=$(($(gzcat ${basename}_trim.fastq.gz | wc -l ) /4))
 
 # Read length of trimmed fastq files
-  echo Calculating read length of trimmed fastq files ...
+  echo "Calculating read length of trimmed fastq files ..." | pr -to30
   #read_length=$(gzcat ${basename}_trim.fastq.gz | awk "NR%4==2 {sum+=length($1)} END {print sum/ (NR/4)}")
   echo
 
