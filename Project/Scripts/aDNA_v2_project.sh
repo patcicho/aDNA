@@ -7,23 +7,16 @@
 # aDNA analysis automation script  #
 ####################################
 
- set -e
-
-
  # Source Colors for text for better visibilty
 source /Users/Patrick/aDNA/temp/colors.txt
-
-# Change to the parent directory of where this script is located, which is the main grenepipe
-# directory, so that we can call this script from anywhere, and run everything from there.
-
-#cd `dirname ${0}`/..
-#BASEPATH=`pwd -P`
 
  ########################################################################
  # Usage function - how to use script                                   #
  ########################################################################
 
 # Still in development #
+# plan to indicate whether SE/PE data, etc
+set -e
 
 # Usage() {
 #    # Display Help
@@ -244,60 +237,70 @@ fi
 
  
 
-time_y "All directories and files are ready ...  starting aDNA pipeline analysis"
+echo_b "All directories and files are ready ...  starting aDNA pipeline analysis" | pr -to30
 echo
 
-echo -e "$BIYellow $(Date) $BIBlue fastp $Color_Off Adapter trimming & length/quality control" 
+time_y "fastp - Adapter trimming & length/quality control"  
 
           # --------------------------------------------------- #
           # ---------------------- fastp ---------------------- #
           # --------------------------------------------------- #
 
 # paths for in and output files required for fastp trimming and quality control
-fastp_in="/Users/Patrick/aDNA/raw_fq/$project"
-fastp_out="/Users/Patrick/aDNA/user_reduction/"
+# fastq files are stored in the fastq_files variable above
+fastp_out="/Users/Patrick/aDNA/Project/$PROJECT/fastp"
+
+# Statistic files, determine number of reads before and after trimming
 
 # fastq files to be trimmed & get the read lengths
 # number of reads before and after trimming
-# tasks=$(ls *.f*q.gz | wc -l)
-# task_count_fastp=0
-#
+tasks=${#fastq_files[@]}
+task_count_fastp=0
+
 # # Creating fastq_statistics text file with headers
-# echo Sample_Name Total_Reads Trimmed_Reads Read_Length >> 1_fastq_statistics.txt
-#
-# for fastq in $(ls *.f*q.gz | head -1); do
-#
-#   ((task_count_fastp++))
-#   basename=${fastq%.fastq.gz}
-#
-#   echo Sample number $task_count_fastp out of $tasks ...
-#   echo $basename
-#
-# # Calculate total number of reads by - total number of lines / 4
-#   echo Calculating number of reads total ...
-#
-#   #echo $(($(gzcat $fastq | wc -l ) /4))
-#   total_reads=$(($(gzcat $fastq | wc -l ) /4))
-#   #echo $fastq $total_reads >> fastq_statistics.txt
-#
-#
-#   echo Performing fastp adapter and length trimming ...
-#   echo
-#   fastp -l 30 -q 30 --in1 $fastq --out1 ${basename}_trim.fastq.gz
-#   echo
-#
-#   echo Calculating number of reads after fastp trimming ...
-#   trimmed_reads=$(($(gzcat ${basename}_trim.fastq.gz | wc -l ) /4))
-#
-# # Read length of trimmed fastq files
-#   echo Calculating read length of trimmed fastq files ...
-#   read_length=$(gzcat ${basename}_trim.fastq.gz | awk "NR%4==2 {sum+=length($1)} END {print sum/ (NR/4)}")
-#   echo
-#
-#   rm *.json *.html
-# # Write all statistics from fastq files to fastq_statistics.txt file.
-#   echo $basename | cut -f1 -d_ $total_reads $trimmed_reads $read_length >> 1_fastq_statistics.txt
-# done
+ echo Sample_Name Total_Reads Trimmed_Reads Read_Length >> 1_fastq_statistics.txt
+
+for fastq in ${fastq_files[@]}; do
+
+  fastp_base=$(basename "$fastq_file")
+
+  r1_file="${fastq}_S1_L004_R1_001.fastq.gz"
+  r2_file="${fastq}_S1_L004_R2_001.fastq.gz"
+  
+  r1_out="${fastp_out}/${fastp_base}_S1_L004_R1_001.trim.fastq.gz"
+  r2_out="${fastp_out}/${fastp_base}_S1_L004_R2_001.trim.fastq.gz"
+
+  ((task_count_fastp++))
+  basename=${fastq%.fastq.gz}
+
+  echo "Sample $fastp_base - Sample number $task_count_fastp out of $tasks ..."
+
+# Calculate total number of reads by - total number of lines / 4
+  echo Calculating number of reads total ...
+
+  #echo $(($(gzcat $fastq | wc -l ) /4))
+  #total_reads=$(($(gzcat $fastq | wc -l ) /4))
+  echo $fastq $total_reads >> /Users/Patrick/aDNA/Project/${PROJECT}/statistics/statistics_fastp.txt # writes to statistic file
+
+
+  #echo Performing fastp adapter and length trimming ...
+  # length and quality scores >= 30
+  echo
+  echo "fastp -l 30 -q 30 --in1 $r1_file --in2 $r2_file --out1 $r1_out --out2 $r2_out" # can use paralell command here
+  echo
+  sleep 2
+  echo Calculating number of reads after fastp trimming ...
+  #trimmed_reads=$(($(gzcat ${basename}_trim.fastq.gz | wc -l ) /4))
+
+# Read length of trimmed fastq files
+  echo Calculating read length of trimmed fastq files ...
+  #read_length=$(gzcat ${basename}_trim.fastq.gz | awk "NR%4==2 {sum+=length($1)} END {print sum/ (NR/4)}")
+  echo
+
+ # rm *.json *.html
+# Write all statistics from fastq files to fastq_statistics.txt file.
+ # echo $basename | cut -f1 -d_ $total_reads $trimmed_reads $read_length >> 1_fastq_statistics.txt
+done
 #
           # ----------------------------------------------------- #
           # ---------------------- bwa aln ---------------------- #
